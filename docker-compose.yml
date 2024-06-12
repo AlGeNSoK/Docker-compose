@@ -1,0 +1,42 @@
+version: '3.9'
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    driver: bridge
+
+services:
+  pgdb:
+    image: postgres:alpine3.20
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    container_name: pgdb
+    ports:
+      - 5432:5432
+
+  application:
+    build: .
+    command: ./docker-entrypoint.sh
+    env_file:
+      - ./.env
+    depends_on:
+      - pgdb
+      - nginx
+    ports:
+      - 8000:8000
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:stable-alpine3.19-perl
+    networks:
+      - backend
+    ports:
+      - 80:80
